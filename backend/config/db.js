@@ -4,13 +4,13 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
-      tls: true,
-      tlsAllowInvalidCertificates: true,
+      serverSelectionTimeoutMS: 60000,
+      socketTimeoutMS: 60000,
     });
     console.log("MongoDB Connected ✅");
   } catch (error) {
     console.error("MongoDB Error ❌", error.message);
-    process.exit(1);
+    // Don't exit - let server keep running
   }
 };
 
