@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 800px;
+      padding: 25px;
+      border-radius: 15px;
+      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .user {
+      text-align: center;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .box {
+      flex: 1;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.15);
+      transition: 0.3s;
+    }
+
+    .box:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .box h3 {
+      font-size: 24px;
+      margin-top: 5px;
+    }
+
+    /* Buttons */
+    .actions {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      margin: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .btn-primary {
+      background: #00c6ff;
+      color: black;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid white;
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    /* Delete section */
+    .delete-box {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    input {
+      padding: 8px;
+      border-radius: 5px;
+      border: none;
+      width: 70%;
+      margin-right: 5px;
+    }
+
+    .msg {
+      margin-top: 10px;
+    }
+
+    .error {
+      color: #ff6b6b;
+    }
+
+    .success {
+      color: #00ffae;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Admin Dashboard</h1>
+
+    <div class="user">
+      Logged in as: <b id="email"></b>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="box">
+        <p>Total Voters</p>
+        <h3 id="total">0</h3>
+      </div>
+      <div class="box">
+        <p>Voted</p>
+        <h3 id="voted">0</h3>
+      </div>
+      <div class="box">
+        <p>Remaining</p>
+        <h3 id="remaining">0</h3>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="actions">
+      <button class="btn-primary" onclick="loadStats()">Reload</button>
+      <button class="btn-secondary" onclick="goResults()">View Results</button>
+    </div>
+
+    <!-- Delete -->
+    <div class="delete-box">
+      <h3>Delete Voter</h3>
+      <input type="email" id="delEmail" placeholder="Enter email">
+      <button class="btn-primary" onclick="deleteUser()">Delete</button>
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://localhost:3000/api/admin";
+
+    function showMsg(text, type = "") {
+      const msg = document.getElementById("msg");
+      msg.innerText = text;
+      msg.className = "msg " + type;
+    }
+
+    // Check session
+    function check() {
+      const token = localStorage.getItem("adminToken");
+      const email = localStorage.getItem("adminEmail");
+
+      if (!token) {
+        alert("Login again");
+        window.location = "admin-login.html";
+      }
+
+      document.getElementById("email").innerText = email;
+    }
+
+    // Load stats
+    async function loadStats() {
+      const token = localStorage.getItem("adminToken");
+
+      try {
+        const res = await fetch(API + "/stats", {
+          headers: { Authorization: "Bearer " + token }
+        });
+
+        const data = await res.json();
+
+        document.getElementById("total").innerText = data.totalVoters;
+        document.getElementById("voted").innerText = data.totalVotes;
+        document.getElementById("remaining").innerText =
+          data.totalVoters - data.totalVotes;
+
+      } catch {
+        showMsg("Error loading stats", "error");
+      }
+    }
+
+    // Delete voter
+    async function deleteUser() {
+      const email = document.getElementById("delEmail").value;
+      const token = localStorage.getItem("adminToken");
+
+      if (!email) return showMsg("Enter email", "error");
+
+      try {
+        const res = await fetch(API + "/voter/" + email, {
+          method: "DELETE",
+          headers: { Authorization: "Bearer " + token }
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          showMsg(data.error, "error");
+        } else {
+          showMsg("Deleted successfully", "success");
+          loadStats();
+        }
+
+      } catch {
+        showMsg("Delete failed", "error");
+      }
+    }
+
+    function goResults() {
+      window.location = "result.html";
+    }
+
+    window.onload = () => {
+      check();
+      loadStats();
+    };
+  </script>
+
+</body>
+
+</html>

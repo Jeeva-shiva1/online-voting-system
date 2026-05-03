@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Election Results</title>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/result.css" />
+</head>
+<body>
+  <div class="container result-container">
+    <h1>Election Results</h1>
+
+    <!-- Winner panel -->
+    <div class="win-panel">
+      <h3 id="winnerName">No winner yet</h3>
+      <p class="subtitle" id="subTitle">Voting still in progress</p>
+    </div>
+
+    <!-- Results chart -->
+    <div class="chart-container">
+      <h2 style="margin-bottom: 1.5rem; text-align: center;">Vote Distribution</h2>
+      <canvas id="resultsChart"></canvas>
+    </div>
+
+    <div class="ctrl-row">
+      <button id="refreshBtn" class="btn">Refresh Results</button>
+      <button id="toggleVotesBtn" class="btn outline">Hide Vote Data</button>
+    </div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById("resultsChart").getContext("2d");
+
+    // Mock data (in real app: replace with /api/result JSON)
+    function getResultsFromApi() {
+      return {
+        winner: "Candidate B",
+        candidates: [
+          { name: "Candidate A", votes: 110 },
+          { name: "Candidate B", votes: 290 },
+          { name: "Candidate C", votes: 180 },
+          { name: "Candidate D", votes: 75 }
+        ]
+      };
+    }
+
+    // Initialize chart
+    const chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "Votes",
+            data: [],
+            backgroundColor: [
+              "rgba(54, 162, 235, 0.7)",
+              "rgba(255, 99, 132, 0.7)",
+              "rgba(255, 205, 86, 0.7)",
+              "rgba(75, 192, 192, 0.7)"
+            ],
+            borderColor: "#333",
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+
+    // Show winner only (no vote counts to voter)
+    function updateWinnerPanel(winner, subtitle = "Election concluded") {
+      const nameEl = document.getElementById("winnerName");
+      const subEl = document.getElementById("subTitle");
+
+      if (winner) {
+        nameEl.textContent = `Winner: ${winner}`;
+        subEl.textContent = subtitle;
+      } else {
+        nameEl.textContent = "No winner yet";
+        subEl.textContent = "Voting still in progress";
+      }
+    }
+
+    // Update chart from data
+    function updateChart(data) {
+      const labels = data.candidates.map(c => c.name);
+      const values = data.candidates.map(c => c.votes);
+
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = values;
+      chart.update();
+    }
+
+    // Load and show results
+    async function loadResults() {
+      try {
+        const res = await fetch("http://localhost:3000/api/votes/result");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error("Failed to load results");
+        }
+
+        updateWinnerPanel(data.winner, "Election concluded");
+        updateChart(data);
+      } catch (err) {
+        console.error(err);
+        updateWinnerPanel(null, "Error loading results");
+      }
+    }
+
+    // Toggle vote data (optional: show / hide bars for voter vs admin)
+    document.getElementById("toggleVotesBtn").addEventListener("click", (e) => {
+      const isHidden = chart.data.datasets[0].data.length === 0;
+      const data = getResultsFromApi();
+
+      if (isHidden) {
+        chart.data.datasets[0].data = data.candidates.map(c => c.votes);
+        e.target.textContent = "Hide Vote Data";
+      } else {
+        chart.data.datasets[0].data = [];
+        e.target.textContent = "Show Vote Data";
+      }
+      chart.update();
+    });
+
+    // Refresh results (simulate API call again)
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      // Later: fetch("http://localhost:3000/api/result").then(...).json();
+      const data = getResultsFromApi();
+      updateWinnerPanel(data.winner);
+      updateChart(data);
+      alert("Results refreshed.");
+    });
+
+    // Load on page load
+    window.addEventListener("load", loadResults);
+  </script>
+</body>
+</html>

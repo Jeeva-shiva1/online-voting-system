@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Online Voting System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/login.css" />
+</head>
+<body class="login-page">
+  <div class="container">
+    <div class="brand-logo">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="10" fill="#6366f1"/>
+        <path d="M12 20l6 6 10-12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Online Voting System</h1>
+    <p class="subtitle">Sign in to access your voting dashboard</p>
+
+    <div class="input-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="your@email.com" autocomplete="email" />
+    </div>
+    <div class="input-group">
+      <label for="registerNumber">Phone / Register Number</label>
+      <input type="text" id="registerNumber" placeholder="9876543210 / CS2301" autocomplete="off" />
+    </div>
+
+    <button id="loginBtn" class="btn">Sign In</button>
+    <div id="msg" class="msg hidden"></div>
+
+    <div class="link-row">
+      New voter? <a href="register.html">Create an account</a>
+    </div>
+  </div>
+
+  <script>
+    const email = document.getElementById("email");
+    const registerNumber = document.getElementById("registerNumber");
+    const loginBtn = document.getElementById("loginBtn");
+    const msg = document.getElementById("msg");
+
+    function showMessage(text, error = false) {
+      msg.textContent = text;
+      msg.classList.remove("hidden", "error", "success");
+      msg.classList.add(error ? "error" : "success");
+    }
+
+    function hideMessage() {
+      msg.classList.add("hidden");
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      const body = {
+        email: email.value.trim(),
+        register_number: registerNumber.value.trim()
+      };
+
+      if (!body.email || !body.register_number) {
+        showMessage("Email and phone / register number required.", true);
+        return;
+      }
+
+      hideMessage();
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Signing in...";
+
+      try {
+        const params = new URLSearchParams(body);
+        // Use absolute URL to avoid issues with Live Server (port 5500)
+        const res = await fetch(`http://localhost:3000/api/voters/status?${params}`);
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          showMessage(errorData.error || "Invalid credentials.", true);
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success) {
+          showMessage(data.error || "Invalid credentials.", true);
+          return;
+        }
+
+        // Save identity (no OTP yet)
+        localStorage.setItem("voterEmail", body.email);
+        localStorage.setItem("voterRegister", body.register_number);
+        localStorage.setItem("voterName", data.name);
+
+        showMessage("Login successful! Redirecting...", false);
+        setTimeout(() => {
+          window.location.href = "voter-dashboard.html";
+        }, 1000);
+      } catch (err) {
+        showMessage("Network error. Check if backend is running on port 3000.", true);
+      }
+ finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Sign In";
+      }
+    });
+  </script>
+</body>
+</html>

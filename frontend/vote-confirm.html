@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirm Vote | Online Voting System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/vote-confirm.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Confirm Your Vote</h1>
+
+    <div class="summary-card">
+      <h2 style="margin-bottom: 1.5rem; text-align: center;">Review your selection</h2>
+      <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--glass-border);">
+        <p><strong>Voter Name:</strong> <span id="voterName">Loading...</span></p>
+        <p><strong>Candidate:</strong> <span id="selectedCandidate">Loading...</span></p>
+      </div>
+    </div>
+
+    <button id="confirmBtn" class="btn">Confirm Vote</button>
+  </div>
+
+  <script>
+    const voterNameSpan = document.getElementById("voterName");
+    const selectedCandidateSpan = document.getElementById("selectedCandidate");
+    const confirmBtn = document.getElementById("confirmBtn");
+
+    const email = localStorage.getItem("voterEmail");
+    const registerNumber = localStorage.getItem("voterRegister");
+    const candidateId = localStorage.getItem("selectedCandidateId");
+    const candidateName = localStorage.getItem("selectedCandidateName");
+
+    if (!email || !registerNumber || !candidateId) {
+      alert("Invalid voting session.");
+      window.location.href = "vote.html";
+    } else {
+      voterNameSpan.textContent = localStorage.getItem("voterName") || "Voter";
+      selectedCandidateSpan.textContent = candidateName || "Selected Candidate";
+    }
+
+    confirmBtn.addEventListener("click", async () => {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Casting Vote...";
+
+      try {
+        const res = await fetch("/api/voters/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            register_number: registerNumber,
+            candidate_id: candidateId
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          alert(data.error || "Failed to cast vote.");
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm Vote";
+          return;
+        }
+
+        alert("Vote cast successfully!");
+        localStorage.removeItem("selectedCandidateId");
+        localStorage.removeItem("selectedCandidateName");
+        localStorage.removeItem("votingAllowed");
+        
+        window.location.href = "result.html";
+
+      } catch (err) {
+        alert("Network error. Check backend.");
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Confirm Vote";
+      }
+    });
+  </script>
+</body>
+</html>

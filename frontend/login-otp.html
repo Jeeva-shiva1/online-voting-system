@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Online Voting System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/login-otp.css" />
+</head>
+<body class="login-page">
+  <div class="container">
+    <div class="brand-logo">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="10" fill="#6366f1"/>
+        <path d="M12 20l6 6 10-12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Voter Login</h1>
+    <p class="subtitle">Enter your credentials to continue</p>
+
+    <div class="input-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="your@email.com" autocomplete="email" />
+    </div>
+    <div class="input-group">
+      <label for="registerNumber">Phone / Register Number</label>
+      <input type="text" id="registerNumber" placeholder="Phone or register number" autocomplete="off" />
+    </div>
+
+    <button id="loginBtn" class="btn">Sign In</button>
+    <div id="msg" class="msg hidden"></div>
+
+    <div class="link-row">
+      Don't have an account? <a href="register.html">Register</a>
+    </div>
+  </div>
+
+  <script>
+    const email = document.getElementById("email");
+    const registerNumber = document.getElementById("registerNumber");
+    const loginBtn = document.getElementById("loginBtn");
+    const msg = document.getElementById("msg");
+
+    function showMessage(text, error = false) {
+      msg.textContent = text;
+      msg.classList.remove("hidden", "error", "success");
+      msg.classList.add(error ? "error" : "success");
+    }
+
+    function hideMessage() { msg.classList.add("hidden"); }
+
+    loginBtn.addEventListener("click", async () => {
+      const body = {
+        email: email.value.trim(),
+        register_number: registerNumber.value.trim()
+      };
+
+      if (!body.email || !body.register_number) {
+        showMessage("All fields required.", true);
+        return;
+      }
+
+      hideMessage();
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Signing in...";
+
+      try {
+        const params = new URLSearchParams(body);
+        const res = await fetch(`http://localhost:3000/api/voters/status?${params}`);
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          showMessage(data.error || "Invalid credentials.", true);
+          return;
+        }
+
+        // Save identity (no vote yet)
+        localStorage.setItem("voterEmail", body.email);
+        localStorage.setItem("voterRegister", body.register_number);
+        localStorage.setItem("voterName", data.name);
+
+        showMessage("Login successful! Redirecting...", false);
+        setTimeout(() => {
+          window.location.href = "voter-dashboard.html";
+        }, 1000);
+      } catch (err) {
+        showMessage("Network error. Check backend.", true);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Sign In";
+      }
+    });
+  </script>
+</body>
+</html>

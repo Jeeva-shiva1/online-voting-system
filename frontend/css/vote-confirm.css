@@ -1,0 +1,27 @@
+
+
+.summary-card p {
+  margin: 1rem 0;
+  font-size: 1.1rem;
+}
+
+.summary-card strong {
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.summary-card span {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+#confirmBtn {
+  background: var(--error); /* Use red for confirm action usually, or stick to primary */
+  margin-top: 2rem;
+}
+
+#confirmBtn:hover {
+  background: #e11d48;
+  box-shadow: 0 10px 15px -3px rgba(225, 29, 72, 0.4);
+}
